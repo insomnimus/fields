@@ -7,6 +7,7 @@ A practical command line utility for filtering text streams.
 -	Show certain lines only.
 -	Show only words by their indices.
 -	Use range expressions (1..20).
+-	Split lines by any string (default is spaces).
 
 ## Installation:
 

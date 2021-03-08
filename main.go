@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	
+
 	"github.com/insomnimus/fields/args"
 )
 
@@ -18,14 +18,16 @@ var (
 	lines   []int
 	words   []int
 
+	separator        = ""
 	maxLine          = -1
 	file, word, line string
 )
 
 var (
-	reWord = regexp.MustCompile(`\-(?:w|\-word)=(.+)$`)
+	reSep  = regexp.MustCompile(`^\-(?s|\-separator)=(.+)$`)
+	reWord = regexp.MustCompile(`^\-(?:w|\-word)=(.+)$`)
 	reLine = regexp.MustCompile(`^\-(?:l|\-line)=(.+)$`)
-	reFile = regexp.MustCompile(`\-(?:f|\-file)=(.+)$`)
+	reFile = regexp.MustCompile(`^\-(?:f|\-file)=(.+)$`)
 )
 
 func readStream(in io.Reader) {
@@ -63,7 +65,12 @@ func evaluate(s string, ln int) {
 		fmt.Println(s)
 		return
 	}
-	fields := strings.Fields(s)
+	var fields []string
+	if separator == "" {
+		fields = strings.Fields(s)
+	} else {
+		fields = strings.Split(s, separator)
+	}
 	var matches []string
 	for _, w := range words {
 		if w-1 >= len(fields) {
@@ -84,11 +91,12 @@ func evaluate(s string, ln int) {
 func showHelp() {
 	log.Printf(`%s, select substrings and lines from a stream
 usage:
-	%s [options] [field line file]
+	%s [options] arguments
 
 options are:
 	-w, --word=<numbers>: word indices to be printed, starts from 1
 	-l, --line=<numbers>: line indices to be printed, starts from 1
+	-s, --separator=<separator>: separator to split the lines by, default is spaces
 	-f, --file=<file>: file to scan
 	-h, --help: show this message
 
@@ -96,7 +104,7 @@ number ranges are accepted:
 	--line=1..10,15,20..25
 if the file is omitted, the input stream will be the standard input
 if all the flags are omitted, argument order corresponds to:
-	<words> <lines> <file>`,
+	<words> <lines> <separator> <file>`,
 		exeName, exeName)
 	os.Exit(0)
 }
@@ -115,6 +123,12 @@ LOOP:
 		a = arguments[i]
 		if a[0] == '-' {
 			switch a {
+			case "-s", "--separator":
+				if i+1 >= len(arguments) {
+					log.Fatal("error: the --separator flag was set but the value is not provided")
+				}
+				i++
+				separator = arguments[i]
 			case "-h", "--help":
 				showHelp()
 			case "-f", "--file":
@@ -136,6 +150,10 @@ LOOP:
 				i++
 				word = arguments[i]
 			default:
+				if m := reSep.FindStringSubmatch(a); len(m) == 2 {
+					separator = m[1]
+					continue LOOP
+				}
 				if m := reWord.FindStringSubmatch(a); len(m) == 2 {
 					word = m[1]
 					continue LOOP
@@ -157,6 +175,8 @@ LOOP:
 			word = a
 		case line == "":
 			line = a
+		case separator == "":
+			separator = a
 		case file == "":
 			file = a
 		default:
