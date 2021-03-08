@@ -24,7 +24,7 @@ var (
 )
 
 var (
-	reSep  = regexp.MustCompile(`^\-(?s|\-separator)=(.+)$`)
+	reSep  = regexp.MustCompile(`^\-(?:s|\-separator)=(.+)$`)
 	reWord = regexp.MustCompile(`^\-(?:w|\-word)=(.+)$`)
 	reLine = regexp.MustCompile(`^\-(?:l|\-line)=(.+)$`)
 	reFile = regexp.MustCompile(`^\-(?:f|\-file)=(.+)$`)
